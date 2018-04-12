@@ -19,6 +19,16 @@ class HttpCoResult extends AbstractCoResult implements HttpResultInterface
     use ResponseTrait;
 
     /**
+     * @var bool
+     */
+    protected $receive = false;
+
+    /**
+     * @var Response
+     */
+    protected $response;
+
+    /**
      * Return result
      *
      * @param array $params
@@ -41,28 +51,31 @@ class HttpCoResult extends AbstractCoResult implements HttpResultInterface
      */
     public function getResponse(...$params): ResponseInterface
     {
-        $client = $this->connection;
-        $this->recv();
-        $result = $client->body;
-        $client->close();
-        $headers = value(function () {
-            $headers = [];
-            foreach ($this->connection->headers as $key => $value) {
-                $exploded = explode('-', $key);
-                foreach ($exploded as &$str) {
-                    $str = ucfirst($str);
+        if (!$this->isReceive()) {
+            $client = $this->connection;
+            $this->recv();
+            $result = $client->body;
+            $client->close();
+            $this->setReceive(true);
+            $headers = value(function () {
+                $headers = [];
+                foreach ($this->connection->headers as $key => $value) {
+                    $exploded = explode('-', $key);
+                    foreach ($exploded as &$str) {
+                        $str = ucfirst($str);
+                    }
+                    $ucKey = implode('-', $exploded);
+                    $headers[$ucKey] = $value;
                 }
-                $ucKey = implode('-', $exploded);
-                $headers[$ucKey] = $value;
-            }
-            unset($str);
-            return $headers;
-        });
-        $response = $this->createResponse()
-                         ->withBody(new SwooleStream($result ?? ''))
-                         ->withHeaders($headers ?? [])
-                         ->withStatus($this->deduceStatusCode($client));
-        return $response;
+                unset($str);
+                return $headers;
+            });
+            $this->response = $this->createResponse()
+                ->withBody(new SwooleStream($result ?? ''))
+                ->withHeaders($headers ?? [])
+                ->withStatus($this->deduceStatusCode($client));
+        }
+        return $this->response;
     }
 
     /**
@@ -80,6 +93,24 @@ class HttpCoResult extends AbstractCoResult implements HttpResultInterface
             $status = $client->statusCode;
         }
         return $status > 0 ? $status : 500;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isReceive(): bool
+    {
+        return $this->receive;
+    }
+
+    /**
+     * @param bool $receive
+     * @return HttpCoResult
+     */
+    public function setReceive($receive)
+    {
+        $this->receive = $receive;
+        return $this;
     }
 
 }

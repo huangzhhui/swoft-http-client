@@ -6,6 +6,7 @@ use Psr\Http\Message\RequestInterface;
 use Swoft\App;
 use Swoft\Helper\JsonHelper;
 use Swoft\Http\Message\Uri\Uri;
+use Swoft\HttpClient\Exception\RuntimeException;
 use Swoft\HttpClient\HttpCoResult;
 use Swoft\HttpClient\HttpResultInterface;
 use Swoole\Coroutine;
@@ -22,6 +23,16 @@ class CoroutineAdapter implements AdapterInterface
      * @var array
      */
     protected $defaultOptions = [];
+
+    /**
+     * CoroutineAdapter constructor.
+     */
+    public function __construct()
+    {
+        if (! App::isCoContext()) {
+            throw new RuntimeException('Cannot use Coroutine Adapter in non-coroutine context');
+        }
+    }
 
     /**
      * TODO add Middleware, and handle redirect situation

@@ -3,8 +3,8 @@
 namespace SwoftTest\HttpClient;
 
 use Swoft\App;
-use Swoft\HttpClient\Client;
 use Swoft\Http\Message\Testing\Base\Response;
+use Swoft\HttpClient\Client;
 use Swoft\HttpClient\Exception\RuntimeException;
 
 /**
@@ -289,7 +289,7 @@ class CurlClientTest extends AbstractTestCase
     /**
      * @test
      */
-    public function exception()
+    public function getResponseTwice()
     {
         $client = new Client();
         $client->setAdapter('curl');
@@ -299,13 +299,9 @@ class CurlClientTest extends AbstractTestCase
         $request = $client->request($method, '', [
             'base_uri' => 'http://www.swoft.org',
         ]);
-        $request->getResponse();
         // getResponse twice
-        try {
-            $request->getResponse();
-        } catch (RuntimeException $exception) {
-            $this->assertInstanceOf(RuntimeException::class, $exception);
-        }
+        $this->assertEquals($request->getResponse(), $request->getResponse());
+        $this->assertEquals($request->getResult(), $request->getResult());
     }
 
 }

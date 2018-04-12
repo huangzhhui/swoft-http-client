@@ -328,4 +328,40 @@ class CoroutineClientTest extends AbstractTestCase
 
         });
     }
+
+    /**
+     * @test
+     */
+    public function getResponseTwice()
+    {
+        go(function () {
+            $client = new Client();
+            $client->setAdapter('co');
+            $method = 'GET';
+
+            /** @var Response $response */
+            $request = $client->request($method, '', [
+                'base_uri' => 'http://www.swoft.org',
+            ]);
+            // getResponse twice
+            $this->assertEquals($request->getResponse(), $request->getResponse());
+            $this->assertEquals($request->getResult(), $request->getResult());
+        });
+    }
+
+    /**
+     * @test
+     * @expectedException \Swoft\HttpClient\Exception\RuntimeException
+     */
+    public function useCoAdapterInNonCoContext()
+    {
+        $client = new Client();
+        $client->setAdapter('co');
+        $method = 'GET';
+
+        /** @var Response $response */
+        $client->request($method, '', [
+            'base_uri' => 'http://www.swoft.org',
+        ]);
+    }
 }
